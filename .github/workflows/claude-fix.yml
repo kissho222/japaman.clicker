@@ -1,0 +1,33 @@
+name: Claude Auto-Fix Unity Errors
+on:
+  workflow_dispatch:  # 手動実行
+  issues:
+    types: [opened]
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Fix MissingReferenceException
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: |
+            Fix the MissingReferenceException error in the Unity project:
+            
+            1. In UpgradeSidePanelUI.cs, fix the ItemActivationEffect method
+            2. Add proper null checks and error handling
+            3. Fix data synchronization issues in UpgradeManager.cs
+            4. Improve new game initialization
+            
+            Focus on:
+            - Null reference protection
+            - Coroutine safety
+            - UI component lifecycle management
+            - Data consistency between activeUpgrades and allUpgrades
+            
+            Create a pull request with the fixes.
+          allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool,Write"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
