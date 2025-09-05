@@ -1,18 +1,23 @@
-name: Claude Emergency Fix
+name: Connection Test
 
 on:
   workflow_dispatch:
 
 jobs:
-  fix:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Emergency Fix
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Basic Test
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "API Key exists: ${{ secrets.ANTHROPIC_API_KEY != '' }}"
+          echo "GitHub Token exists: ${{ secrets.GITHUB_TOKEN != '' }}"
+        
+      - name: Claude Action Test (最小)
         uses: anthropics/claude-code-base-action@beta
         with:
-          prompt: "Fix MissingReferenceException in UpgradeSidePanelUI.cs"
+          prompt: "Hello, please respond with 'Connection successful'"
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
