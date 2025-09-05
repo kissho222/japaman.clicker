@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -862,25 +862,56 @@ public class UpgradeSidePanelUI : MonoBehaviour
     /// </summary>
     private IEnumerator ItemActivationEffect(Image iconImage)
     {
-        // 元の色と大きさを保存
-        Color originalColor = iconImage.color;
-        Vector3 originalScale = iconImage.transform.localScale;
+        // 🔥 厳密なnullチェック
+        if (iconImage == null || this == null || !gameObject.activeInHierarchy)
+        {
+            yield break;
+        }
 
-        // エフェクト用の値
-        Color highlightColor = new Color(1f, 1f, 0.8f, 1f); // 薄い黄色
+        Color originalColor;
+        Vector3 originalScale;
+
+        try
+        {
+            originalColor = iconImage.color;
+            originalScale = iconImage.transform.localScale;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ ItemActivationEffect初期化エラー: {e.Message}");
+            yield break;
+        }
+
+        Color highlightColor = new Color(1f, 1f, 0.8f, 1f);
         Vector3 enlargedScale = originalScale * 1.1f;
-
         float duration = 0.3f;
         float elapsed = 0f;
 
         // 光らせて拡大
         while (elapsed < duration / 2f)
         {
+            if (iconImage == null || this == null || !gameObject.activeInHierarchy)
+            {
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
             float progress = elapsed / (duration / 2f);
 
-            iconImage.color = Color.Lerp(originalColor, highlightColor, progress);
-            iconImage.transform.localScale = Vector3.Lerp(originalScale, enlargedScale, progress);
+            try
+            {
+                iconImage.color = Color.Lerp(originalColor, highlightColor, progress);
+                iconImage.transform.localScale = Vector3.Lerp(originalScale, enlargedScale, progress);
+            }
+            catch (MissingReferenceException)
+            {
+                yield break;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"❌ エフェクト実行エラー: {e.Message}");
+                yield break;
+            }
 
             yield return null;
         }
@@ -890,18 +921,49 @@ public class UpgradeSidePanelUI : MonoBehaviour
         // 元に戻す
         while (elapsed < duration / 2f)
         {
+            if (iconImage == null || this == null || !gameObject.activeInHierarchy)
+            {
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
             float progress = elapsed / (duration / 2f);
 
-            iconImage.color = Color.Lerp(highlightColor, originalColor, progress);
-            iconImage.transform.localScale = Vector3.Lerp(enlargedScale, originalScale, progress);
+            try
+            {
+                iconImage.color = Color.Lerp(highlightColor, originalColor, progress);
+                iconImage.transform.localScale = Vector3.Lerp(enlargedScale, originalScale, progress);
+            }
+            catch (MissingReferenceException)
+            {
+                yield break;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"❌ エフェクト復元エラー: {e.Message}");
+                yield break;
+            }
 
             yield return null;
         }
 
-        // 確実に元の状態に戻す
-        iconImage.color = originalColor;
-        iconImage.transform.localScale = originalScale;
+        // 最終復元
+        try
+        {
+            if (iconImage != null)
+            {
+                iconImage.color = originalColor;
+                iconImage.transform.localScale = originalScale;
+            }
+        }
+        catch (MissingReferenceException)
+        {
+            // 既に破棄済み - OK
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ 最終復元エラー: {e.Message}");
+        }
     }
 
     /// <summary>
