@@ -1,0 +1,137 @@
+name: Claude Auto-Fix Unity Errors
+
+# ワークフローの実行タイミング
+on:
+  workflow_dispatch:  # 手動実行を有効化
+    inputs:
+      fix_type:
+        description: '修正の種類'
+        required: true
+        default: 'emergency'
+        type: choice
+        options:
+        - emergency      # 緊急修正（MissingReferenceException）
+        - data_sync      # データ同期修正
+        - comprehensive  # 包括的修正
+
+jobs:
+  auto-fix:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Emergency Fix - MissingReferenceException
+        if: ${{ github.event.inputs.fix_type == 'emergency' }}
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: |
+            🔥 緊急修正: Unity MissingReferenceException エラーの解決
+            
+            タスク:
+            1. Assets/Scripts/Upgrade/UpgradeSidePanelUI.cs の ItemActivationEffect メソッドを修正
+            2. null参照エラーの完全な防止
+            3. コルーチンの安全性向上
+            4. UI コンポーネントのライフサイクル管理
+            
+            修正のポイント:
+            - 各フレームでの厳密なnullチェック
+            - try-catch による例外処理
+            - MissingReferenceException の専用ハンドリング
+            - gameObject.activeInHierarchy のチェック
+            
+            修正後、プルリクエストを作成してください。
+            
+          allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool,Write"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "15"
+
+      - name: Data Sync Fix
+        if: ${{ github.event.inputs.fix_type == 'data_sync' }}
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: |
+            🔄 データ同期修正: UpgradeManager のデータ整合性問題の解決
+            
+            タスク:
+            1. activeUpgrades と allUpgrades の同期問題を修正
+            2. 新規ゲーム初期化の改善
+            3. ApplyUpgrade メソッドの安全性向上
+            4. SyncUpgradeData メソッドの強化
+            
+            修正のポイント:
+            - データの一貫性保証
+            - 新規ゲーム時の完全なリセット
+            - エラーハンドリングの追加
+            - デバッグログの充実
+            
+            修正後、プルリクエストを作成してください。
+            
+          allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool,Write"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "20"
+
+      - name: Comprehensive Fix
+        if: ${{ github.event.inputs.fix_type == 'comprehensive' }}
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: |
+            🚀 包括的修正: Unity アップグレードシステム全体の安全性向上
+            
+            タスク:
+            1. 全ての C# ファイルの安全性向上
+            2. null参照エラーの完全防止
+            3. 例外処理の標準化
+            4. パフォーマンス最適化
+            5. コードの可読性向上
+            
+            対象ファイル:
+            - Assets/Scripts/Upgrade/UpgradeManager.cs
+            - Assets/Scripts/Upgrade/UpgradeSidePanelUI.cs
+            - Assets/Scripts/Upgrade/UpgradeUIManager.cs
+            - Assets/Scripts/Upgrade/UpgradeSelectionUI.cs
+            
+            修正のポイント:
+            - 全メソッドへのtry-catch追加
+            - nullチェックの徹底
+            - コルーチンの安全性向上
+            - デバッグログの充実
+            - Unity ベストプラクティスの適用
+            
+            修正後、プルリクエストを作成してください。
+            
+          allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool,Write"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          timeout_minutes: "30"
+
+      - name: Create Summary Comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+            const fixType = '${{ github.event.inputs.fix_type }}';
+            
+            const summary = `
+            ## 🤖 Claude Auto-Fix 実行完了
+            
+            **修正タイプ**: ${fixType}
+            **実行時刻**: ${new Date().toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'})}
+            **Run ID**: ${runId}
+            
+            **修正内容**:
+            ${fixType === 'emergency' ? '- MissingReferenceException の緊急修正' : ''}
+            ${fixType === 'data_sync' ? '- データ同期問題の修正' : ''}
+            ${fixType === 'comprehensive' ? '- 包括的な安全性向上' : ''}
+            
+            詳細は [Actions ページ](https://github.com/${owner}/${repo}/actions/runs/${runId}) をご確認ください。
+            `;
+            
+            // 既存のissueがあれば、そこにコメント。なければワークフロー実行ログに記録
+            console.log(summary);
